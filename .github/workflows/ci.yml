@@ -1,0 +1,40 @@
+name: Python Application CI
+
+# 1. TETİKLEYİCİ: Ne zaman çalışsın?
+# 'main' dalına her push (yükleme) yapıldığında çalışır
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# 2. GÖREVLER: Neler yapılacak?
+jobs:
+  build-and-test:
+    # 3. ÇALIŞTIRICI: Hangi bilgisayarda çalışsın?
+    # GitHub'ın sağladığı son sürüm Ubuntu sanal bilgisayarı
+    runs-on: ubuntu-latest
+
+    # 4. ADIMLAR: Sırasıyla yapılacak işler
+    steps:
+      # Adım 1: Kodunu depodan çek
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Adım 2: Python 3.11'i kur
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Adım 3: Kütüphaneleri yükle (Hem normal hem test için olanları)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # Adım 4: Testleri çalıştır!
+      - name: Run tests
+        run: |
+          pytest
