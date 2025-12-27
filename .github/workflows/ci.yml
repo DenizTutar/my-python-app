@@ -1,40 +1,67 @@
+# A name for your workflow, which will be displayed on GitHub
 name: Python Application CI
 
-# 1. TETİKLEYİCİ: Ne zaman çalışsın?
-# 'main' dalına her push (yükleme) yapıldığında çalışır
+# 1. THE TRIGGER: When should this workflow run?
+# Run on every push or pull request to the 'main' branch
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
-# 2. GÖREVLER: Neler yapılacak?
+# 2. THE JOBS: What tasks should be performed?
 jobs:
+  # Define a job with the ID 'build-and-test'
   build-and-test:
-    # 3. ÇALIŞTIRICI: Hangi bilgisayarda çalışsın?
-    # GitHub'ın sağladığı son sürüm Ubuntu sanal bilgisayarı
+    # 3. THE RUNNER: What kind of machine should this run on?
+    # Use the latest version of Ubuntu provided by GitHub
     runs-on: ubuntu-latest
 
-    # 4. ADIMLAR: Sırasıyla yapılacak işler
+    # 4. THE STEPS: The sequence of tasks to execute
     steps:
-      # Adım 1: Kodunu depodan çek
+      # Step 1: Check out the repository's code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Adım 2: Python 3.11'i kur
+      # Step 2: Set up the Python environment
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # Adım 3: Kütüphaneleri yükle (Hem normal hem test için olanları)
+      # Step 3: Install project and test dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      # Adım 4: Testleri çalıştır!
+      # Step 4: Run the tests with pytest
       - name: Run tests
         run: |
           pytest
+
+# ... (previous 'build-and-test' job remains the same) ...
+
+  # Define a new job for building and pushing the Docker image
+  build-and-push-docker:
+    # This job should only run if the 'build-and-test' job succeeds
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: your-dockerhub-username/my-python-app:latest
